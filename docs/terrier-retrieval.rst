@@ -46,8 +46,7 @@ Two alternative query formats are also supported:
 
  - MatchOp - this is a `lower-level query language <https://github.com/terrier-org/terrier-core/blob/5.x/doc/querylanguage.md#matching-op-query-language>`_ supported by Terrier, which is Indri-like in nature, and supports operators like ``#1()``. (exact phrase and ``#combine()`` (weighting). MatchOp queries stored in the `"query"` column. 
 
- - pre-tokenised queries - in this format, query terms are provided, with weights, in a dictionary. Query terms are assumed to be already stemmed. This
- format is useful for techniques that weight query terms, such as for Learned Sparse Retrieval (e.g. see `pyterrier_splade <https://github.com/cmacdonald/pyt_splade>`_).
+ - pre-tokenised queries - in this format, query terms are provided, with weights, in a dictionary. Query terms are assumed to be already stemmed. This format is useful for techniques that weight query terms, such as for Learned Sparse Retrieval (e.g. see `pyterrier_splade <https://github.com/cmacdonald/pyt_splade>`_).
 
 The following query dataframes are therefore equivalent:
 
