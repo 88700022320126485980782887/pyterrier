@@ -54,19 +54,19 @@ This class is the base class for all transformers.
 
 .. autoclass:: pyterrier.Transformer
     :members:
-
+    :special-members: __call__
 
 Default Method
 ,,,,,,,,,,,,,,,,
 
-You can invoke a transformer's transfor method simply by calling the default method. If ``t`` is a transformer::
+You can invoke a transformer's transform method simply by calling the default method. If ``t`` is a transformer::
 
   df_in = pt.new.queries(['test query'], qid=['q1'])
   df_out = t.transform(df_in)
   df_out = t(df_in)
 
 The default method can also detect iterable dictionaries, and pass those directly to ``transform_iter()`` 
-(which typically calls ``transform()``). So the following expression is equivalent to the examples in the 
+(which itself calls ``transform()``). So the following expression is equivalent to the examples in the 
 previous code block::
 
   df_out = t([{'qid' : 'q1', 'query' : 'test query'}])
