@@ -54,7 +54,12 @@ class Transformer:
     """
         Base class for all transformers. Implements the various operators ``>>`` ``+`` ``*`` ``|`` ``&`` 
         as well as ``search()`` for executing a single query and ``compile()`` for rewriting complex pipelines into more simples ones.
+
+        Most implementations need only implement the abstract ``transform()`` method. pt.apply helper functions can be used to
+        easily construct Transformers around a single function.
     """
+
+    ## NB: This class uses 'Transformer' to refer to itself, from Python 3.11 we can use from ``typing import Self``
 
     @staticmethod
     def identity() -> 'Transformer':
@@ -90,25 +95,26 @@ class Transformer:
 
     def transform(self, topics_or_res : pd.DataFrame) -> pd.DataFrame:
         """
-            Abstract method for all transformations. Typically takes as input a Pandas
-            DataFrame, and also returns one.
+            Abstract method for all transformations. Takes as input a Pandas
+            DataFrame, and also returns one. Most pt.Transformer implementations 
+            must implement this method.
         """
         pass
 
     def transform_iter(self, input: Iterable[dict]) -> pd.DataFrame:
         """
-            Method that proesses an iter-dict by instantiating it as a dataframe and calling transform().
-            Returns the DataFrame returned by transform(). This can be a handier version of transform()
-            that avoids constructing a dataframe by hand. Alo used in the implementation of index() on a composed 
+            Helper method that invoking a transformer on an iter-dict. It instantiates the input as a dataframe and calls ``transform()`.
+            Returns the DataFrame returned by ``transform()``. This can be a handier version of ``transform()``
+            that avoids constructing a dataframe by hand. Also used in the implementation of ``index()`` on a composed 
             pipeline.
         """
         return self.transform(pd.DataFrame(list(input)))
 
     def transform_gen(self, input : pd.DataFrame, batch_size=1, output_topics=False) -> Iterator[pd.DataFrame]:
         """
-            Method for executing a transformer pipeline on smaller batches of queries.
+            Helper method for invoking a transformer on smaller batches of queries.
             The input dataframe is grouped into batches of batch_size queries, and a generator
-            returned, such that transform() is only executed for a smaller batch at a time. 
+            returned, such that ``transform()`` is only executed for a smaller batch at a time. 
 
             Arguments:
                 input(DataFrame): a dataframe to process
@@ -145,7 +151,7 @@ class Transformer:
         """
             Method for executing a transformer (pipeline) for a single query. 
             Returns a dataframe with the results for the specified query. This
-            is a utility method, and most uses are expected to use the transform()
+            is a utility method, and most uses are expected to use the ``transform()``
             method passing a dataframe.
 
             Arguments:
@@ -195,7 +201,7 @@ class Transformer:
     def get_parameter(self, name : str):
         """
             Gets the current value of a particular key of the transformer's configuration state.
-            By default, this examines the attributes of the transformer object, using hasattr() and setattr().
+            By default, this examines the attributes of the transformer object, using ``hasattr()`` and ``setattr()``.
         """
         if hasattr(self, name):
             return getattr(self, name)
@@ -206,7 +212,7 @@ class Transformer:
     def set_parameter(self, name : str, value):
         """
             Adjusts this transformer's configuration state, by setting the value for specific parameter.
-            By default, this examines the attributes of the transformer object, using hasattr() and setattr().
+            By default, this examines the attributes of the transformer object, using ``hasattr()`` and ``setattr()``.
         """
         if hasattr(self, name):
             setattr(self, name, value)
@@ -216,18 +222,25 @@ class Transformer:
 
     def __call__(self, input : Union[pd.DataFrame, Iterable[dict]]) -> pd.DataFrame:
         """
-            Sets up a default method for every transformer, which is aliased to transform() (for DataFrames)
-            or transform_iter() (for iterable dictionaries) depending on the type of input. 
+            This implements a default method for every transformer, which is aliased to ``transform()`` (for DataFrames)
+            or ``transform_iter()`` (for iterable dictionaries), depending on the type of input.
+
+            Example::
+
+                # these three calls are equivalent
+                df = t.transform(pd.DataFrame([{'qid' : 'q1', 'query' : 'test query'}]))
+                df = t(pd.DataFrame([{'qid' : 'q1', 'query' : 'test query'}])) # calls .transform() with DF
+                df = t([{'qid' : 'q1', 'query' : 'test query'}]) # makes DF from iter-dict, then calls .transform() 
         """
         if isinstance(input, pd.DataFrame):
             return self.transform(input)
         return self.transform_iter(input)
 
-    def __rshift__(self, right) -> 'Transformer':
+    def __rshift__(self, right : 'Transformer') -> 'Transformer': # we now assume composition only takes Transformers 
         from .ops import ComposedPipeline
         return ComposedPipeline(self, right)
 
-    def __rrshift__(self, left) -> 'Transformer':
+    def __rrshift__(self, left : 'Transformer') -> 'Transformer': # we now assume composition only takes Transformers
         from .ops import ComposedPipeline
         return ComposedPipeline(left, self)
 
