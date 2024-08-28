@@ -367,38 +367,38 @@ class Retriever(RetrieverBase):
         return rtr_rows
 
 
-    def transform(self, queries):
+    def transform(self, queries_or_res: pd.DataFrame) -> pd.DataFrame:
         """
         Performs the retrieval
 
         Args:
-            queries: String for a single query, list of queries, or a pandas.Dataframe with columns=['qid', 'query']. For re-ranking,
-                the DataFrame may also have a 'docid' and or 'docno' column.
+            queries_or_res: pandas.Dataframe with columns=['qid', 'query']. For re-ranking,
+                the DataFrame may also have a 'docid' and/or 'docno' column.
 
         Returns:
             pandas.Dataframe with columns=['qid', 'docno', 'rank', 'score']
         """
         results=[]
-        if not isinstance(queries, pd.DataFrame):
+        if not isinstance(queries_or_res, pd.DataFrame):
             warn(".transform() should be passed a dataframe. Use .search() to execute a single query.", FutureWarning, 2)
             queries = coerce_queries_dataframe(queries)
         
-        docno_provided = "docno" in queries.columns
-        docid_provided = "docid" in queries.columns
-        scores_provided = "score" in queries.columns
+        docno_provided = "docno" in queries_or_res.columns
+        docid_provided = "docid" in queries_or_res.columns
+        scores_provided = "score" in queries_or_res.columns
         input_results = None
         if docno_provided or docid_provided:
             assert pt.terrier.check_version(5.3)
-            input_results = queries
+            input_results = queries_or_res
 
             # query is optional, and functionally dependent on qid.
             # Hence as long as one row has the query for each qid, 
             # the rest can be None
-            queries = input_results[["qid", "query"]].dropna(axis=0, subset=["query"]).drop_duplicates()
+            queries_or_res = input_results[["qid", "query"]].dropna(axis=0, subset=["query"]).drop_duplicates()
             
         # make sure queries are a String
-        if queries["qid"].dtype == np.int64:
-            queries['qid'] = queries['qid'].astype(str)
+        if queries_or_res["qid"].dtype == np.int64:
+            queries_or_res['qid'] = queries_or_res['qid'].astype(str)
 
         if self.threads > 1:
 
@@ -417,7 +417,7 @@ class Retriever(RetrieverBase):
                 # create a future for each query, and submit to Terrier
                 future_results = {
                     executor.submit(_one_row, row, input_results, docno_provided=docno_provided, docid_provided=docid_provided, scores_provided=scores_provided) : row.qid 
-                    for row in queries.itertuples()}                
+                    for row in queries_or_res.itertuples()}                
                 
                 # as these futures complete, wait and add their results
                 iter = concurrent.futures.as_completed(future_results)
@@ -428,17 +428,17 @@ class Retriever(RetrieverBase):
                     res = future.result()
                     results.extend(res)
         else:
-            iter = queries.itertuples()
+            iter = queries_or_res.itertuples()
             if self.verbose:
-                iter = pt.tqdm(iter, desc=str(self), total=queries.shape[0], unit="q")
+                iter = pt.tqdm(iter, desc=str(self), total=queries_or_res.shape[0], unit="q")
             for row in iter:
                 res = self._retrieve_one(row, input_results, docno_provided=docno_provided, docid_provided=docid_provided, scores_provided=scores_provided)
                 results.extend(res)
 
         res_dt = pd.DataFrame(results, columns=['qid', 'docid' ] + self.metadata + ['rank', 'score'])
         # ensure to return the query and any other input columns
-        input_cols = queries.columns[ (queries.columns == "qid") | (~queries.columns.isin(res_dt.columns))]
-        res_dt = res_dt.merge(queries[input_cols], on=["qid"])
+        input_cols = queries_or_res.columns[ (queries_or_res.columns == "qid") | (~queries_or_res.columns.isin(res_dt.columns))]
+        res_dt = res_dt.merge(queries_or_res[input_cols], on=["qid"])
         return res_dt
         
     def __repr__(self):
@@ -662,34 +662,34 @@ class FeaturesRetriever(Retriever):
             **kwargs):
         return pt.datasets.transformer_from_dataset(dataset, variant=variant, version=version, clz=FeaturesRetriever, **kwargs)
 
-    def transform(self, queries):
+    def transform(self, queries_or_res : pd.DataFrame) -> pd.DataFrame:
         """
         Performs the retrieval with multiple features
 
         Args:
-            queries: A pandas.Dataframe with columns=['qid', 'query']. For re-ranking,
+            queries_or_res: A pandas.Dataframe with columns=['qid', 'query']. For re-ranking,
                 the DataFrame may also have a 'docid' and or 'docno' column.
 
         Returns:
             pandas.DataFrame with columns=['qid', 'docno', 'score', 'features']
         """
         results = []
-        if not isinstance(queries, pd.DataFrame):
+        if not isinstance(queries_or_res, pd.DataFrame):
             warn(".transform() should be passed a dataframe. Use .search() to execute a single query.", FutureWarning, 2)
-            queries = coerce_queries_dataframe(queries)
+            queries_or_res = coerce_queries_dataframe(queries_or_res)
 
-        docno_provided = "docno" in queries.columns
-        docid_provided = "docid" in queries.columns
-        scores_provided = "score" in queries.columns
+        docno_provided = "docno" in queries_or_res.columns
+        docid_provided = "docid" in queries_or_res.columns
+        scores_provided = "score" in queries_or_res.columns
         if docno_provided or docid_provided:
             #re-ranking mode
             assert pt.terrier.check_version(5.3)
-            input_results = queries
+            input_results = queries_or_res
 
             # query is optional, and functionally dependent on qid.
             # Hence as long as one row has the query for each qid, 
             # the rest can be None
-            queries = input_results[["qid", "query"]].dropna(axis=0, subset=["query"]).drop_duplicates()
+            queries_or_res = input_results[["qid", "query"]].dropna(axis=0, subset=["query"]).drop_duplicates()
             RequestContextMatching = pt.java.autoclass("org.terrier.python.RequestContextMatching")
 
             if not scores_provided and self.wmodel is None:
@@ -698,14 +698,14 @@ class FeaturesRetriever(Retriever):
             assert not scores_provided
 
             if self.wmodel is None:
-                raise ValueError("We're in retrieval mode (input columns were "+str(queries.columns)+"), but wmodel is None. FeaturesRetriever requires a wmodel be set for identifying the candidate set. "
+                raise ValueError("We're in retrieval mode (input columns were "+str(queries_or_res.columns)+"), but wmodel is None. FeaturesRetriever requires a wmodel be set for identifying the candidate set. "
                     +" Hint: wmodel argument for FeaturesRetriever, e.g. FeaturesRetriever(index, features, wmodel=\"DPH\")")
 
-        if queries["qid"].dtype == np.int64:
-            queries['qid'] = queries['qid'].astype(str)
+        if queries_or_res["qid"].dtype == np.int64:
+            queries_or_res['qid'] = queries_or_res['qid'].astype(str)
 
         newscores=[]
-        for row in pt.tqdm(queries.itertuples(), desc=str(self), total=queries.shape[0], unit="q") if self.verbose else queries.itertuples():
+        for row in pt.tqdm(queries_or_res.itertuples(), desc=str(self), total=queries_or_res.shape[0], unit="q") if self.verbose else queries_or_res.itertuples():
             qid = str(row.qid)
             query_toks_present : bool = 'query_toks' in row._fields
             if query_toks_present:
@@ -786,8 +786,8 @@ class FeaturesRetriever(Retriever):
         res_dt = pd.DataFrame(results, columns=["qid", "query", "docid", "rank", "features"] + self.metadata)
         res_dt["score"] = newscores
         # ensure to return the query and any other input columns
-        input_cols = queries.columns[ (queries.columns == "qid") | (~queries.columns.isin(res_dt.columns))]
-        res_dt = res_dt.merge(queries[input_cols], on=["qid"])
+        input_cols = queries_or_res.columns[ (queries_or_res.columns == "qid") | (~queries_or_res.columns.isin(res_dt.columns))]
+        res_dt = res_dt.merge(queries_or_res[input_cols], on=["qid"])
         return res_dt
 
     def __repr__(self):
