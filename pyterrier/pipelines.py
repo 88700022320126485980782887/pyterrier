@@ -53,7 +53,7 @@ _irmeasures_columns = {
     'docno' : 'doc_id'
 }
 
-def _mean_of_measures(result, measures=None, num_q = None):
+def _mean_of_measures(result, measures=None, num_q = None) -> Dict[str,float]:
         if len(result) == 0:
             raise ValueError("No measures received - perhaps qrels and topics had no results in common")
         measures_sum = {}
@@ -107,11 +107,11 @@ def _ir_measures_to_dict(
         rev_mapping : Dict[BaseMeasure,str], 
         num_q : int,
         perquery : bool = True,
-        backfill_qids : Sequence[str] = None):
+        backfill_qids : Optional[Sequence[str]] = None) -> Dict[str, Dict[str,float]]:
     from collections import defaultdict
     if perquery:
         # qid -> measure -> value
-        rtr=defaultdict(dict)
+        rtr : Dict[str, Dict[str,float]] = defaultdict(dict)
         for m in seq:
             metric = m.measure
             metric = rev_mapping.get(metric, str(metric))
@@ -146,11 +146,11 @@ def _run_and_evaluate(
         qrels: pd.DataFrame, 
         metrics : MEASURES_TYPE, 
         pbar = None,
-        save_mode : SAVEMODE_TYPE = None,
-        save_file : str = None,
+        save_mode : SAVEMODE_TYPE = 'warn',
+        save_file : Optional[str] = None,
         perquery : bool = False,
         batch_size : Optional[int] = None,
-        backfill_qids : Sequence[str] = None):
+        backfill_qids : Optional[Sequence[str]] = None):
     
     from .io import read_results, write_results
 
@@ -162,7 +162,7 @@ def _run_and_evaluate(
     from timeit import default_timer as timer
     runtime = 0
     num_q = qrels['query_id'].nunique()
-    if save_file is not None and os.path.exists(save_file):
+    if save_file is not None and os.path.exists(save_file): 
         if save_mode == 'reuse':
             system = read_results(save_file)
         elif save_mode == 'overwrite':
@@ -175,7 +175,7 @@ def _run_and_evaluate(
             raise ValueError(("save_dir is set, but the file '%s' already exists. If you are aware of are happy to reuse this " % save_file)+
                              "file to speed up evaluation, set save_mode='reuse'; if you want to overwrite it, set save_mode='overwrite'."+
                               "To make this condition a warning, use save_mode='warn'.")
-        else:
+        else: # including if save_mode is not None
             raise ValueError("Unknown save_mode argument '%s', valid options are 'error', 'warn', 'reuse' or 'overwrite'." % save_mode)
 
     # if its a DataFrame, use it as the results
@@ -282,20 +282,20 @@ def Experiment(
         topics : pd.DataFrame,
         qrels : pd.DataFrame,
         eval_metrics : MEASURES_TYPE,
-        names : Sequence[str] = None,
+        names : Optional[Sequence[str]] = None,
         perquery : bool = False,
         dataframe : bool = True,
         batch_size : Optional[int] = None,
         filter_by_qrels : bool = False,
         filter_by_topics : bool = True,
-        baseline : int = None,
+        baseline : Optional[int] = None,
         test : Union[str,TEST_FN_TYPE] = "t",
-        correction : str = None,
+        correction : Optional[str] = None,
         correction_alpha : float = 0.05,
-        highlight : str = None,
-        round : Union[int,Dict[str,int]] = None,
+        highlight : Optional[str] = None,
+        round : Optional[Union[int,Dict[str,int]]] = None,
         verbose : bool = False,
-        save_dir : str = None,
+        save_dir : Optional[str] = None,
         save_mode : SAVEMODE_TYPE = 'warn',
         **kwargs):
     """
@@ -421,9 +421,9 @@ def Experiment(
 
     from scipy import stats
     if test == "t":
-        test = stats.ttest_rel
+        test : TEST_FN_TYPE = stats.ttest_rel
     if test == "wilcoxon":
-        test = stats.wilcoxon
+        test : TEST_FN_TYPE = stats.wilcoxon
     
     # obtain system names if not specified
     if names is None:
@@ -570,7 +570,7 @@ def Experiment(
                 pcol_reject = pcol.replace("p-value", "reject")
                 pcol_corrected = pcol + " corrected"                
                 reject, corrected, _, _ = statsmodels.stats.multitest.multipletests(df[pcol].drop(df.index[baseline]), alpha=correction_alpha, method=correction)
-                insert_pos = df.columns.get_loc(pcol)
+                insert_pos : int = df.columns.get_loc(pcol)
                 # add reject/corrected values for the baseline
                 reject = np.insert(reject, baseline, False)
                 corrected = np.insert(corrected, baseline, np.nan)
@@ -703,7 +703,7 @@ def KFoldGridSearch(
         # safety - give the GridSearch a stable initial setting
         _restore_state(initial_state)
 
-        optPipe, max_measure, max_setting = GridSearch(
+        optPipe, _, max_setting = GridSearch(
             pipeline,
             params,
             train_topics,
@@ -731,9 +731,9 @@ def GridSearch(
         jobs : int = 1,
         backend='joblib',
         verbose: bool = False,
-        batch_size = None,
-        return_type : str = "opt_pipeline"
-    ) -> Union[Transformer,GRID_SEARCH_RETURN_TYPE_SETTING]:
+        batch_size : Optional[int] = None,
+        return_type : Literal["opt_pipeline", "best_setting", "both"] = "opt_pipeline"
+    ) -> Union[Transformer,GRID_SEARCH_RETURN_TYPE_SETTING, Tuple[Transformer,float, List[GRID_SCAN_PARAM_SETTING]]]:
     """
     GridSearch is essentially, an argmax GridScan(), i.e. it returns an instance of the pipeline to tune
     with the best parameter settings among params, that were found that were obtained using the specified
