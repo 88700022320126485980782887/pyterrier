@@ -422,7 +422,7 @@ class Retriever(RetrieverBase):
                 # as these futures complete, wait and add their results
                 iter = concurrent.futures.as_completed(future_results)
                 if self.verbose:
-                    iter = pt.tqdm(iter, desc=str(self), total=queries.shape[0], unit="q")
+                    iter = pt.tqdm(iter, desc=str(self), total=queries_or_res.shape[0], unit="q")
                 
                 for future in iter:
                     res = future.result()
