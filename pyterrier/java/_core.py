@@ -153,7 +153,7 @@ def add_jar(jar_path):
 
 
 @before_init
-def add_package(org_name: str = None, package_name: str = None, version: str = None, file_type='jar'):
+def add_package(org_name: Optional[str] = None, package_name: Optional[str] = None, version: Optional[str] = None, file_type='jar'):
     if version is None or version == 'snapshot':
         version = mavenresolver.latest_version_num(org_name, package_name)
     file_name = mavenresolver.get_package_jar(org_name, package_name, version, artifact=file_type)
