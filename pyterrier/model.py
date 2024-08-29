@@ -51,7 +51,7 @@ def document_columns(df : pd.DataFrame) -> Sequence[str]:
     """
     return list(df.columns.difference(query_columns(df, qid=False)))
 
-def query_columns(df : pd.DataFrame, qid=True) -> Sequence[str]:
+def query_columns(df : pd.DataFrame, qid=True) -> List[str]:
     """
         Given a dataframe, returns the names of all columns that contain the current query or
         previous generations of the query (as performed by `push_queries()`). 
