@@ -73,7 +73,7 @@ def before_init(fn: Optional[Callable] = None) -> Union[Callable, bool]:
 # ----------------------------------------------------------
 
 @required_raise
-def autoclass(*args, **kwargs):
+def autoclass(*args, **kwargs) -> Callable:
     """
     Wraps jnius.autoclass once java has started. Raises an error if called before pt.java.init() is called.
     """

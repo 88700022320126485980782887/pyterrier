@@ -13,7 +13,8 @@ import math
 from warnings import warn
 from deprecated import deprecated
 from collections import deque
-from typing import List, Dict, Union
+
+from typing import List, Dict, Union, Callable
 import more_itertools
 import pyterrier as pt
 from pyterrier.terrier.stemmer import TerrierStemmer
@@ -259,7 +260,7 @@ class TerrierIndexer:
         self.overwrite = overwrite
         self.verbose = verbose
         self.meta_reverse = meta_reverse
-        self.cleanup_hooks = []
+        self.cleanup_hooks : List[Callable] = []
 
     def setProperty(self, k, v):
         """
