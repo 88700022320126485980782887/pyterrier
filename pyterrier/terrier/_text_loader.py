@@ -1,4 +1,4 @@
-from typing import List, Union, Literal
+from typing import List, Union, Literal, Sequence
 
 import pandas as pd
 import pyterrier as pt
@@ -53,15 +53,15 @@ class TerrierTextLoader(pt.Transformer):
             raise ValueError(f"Neither docid nor docno are in the input dataframe, found {list(inp.columns)}")
 
         # Get the docids
+        docids : List[int]
         if "docid" not in inp.columns:
             # Look up docids by docno
-            docids = inp.docno.map(lambda docno: self.metaindex.getDocument("docno", docno))
+            docids = inp.docno.map(lambda docno: self.metaindex.getDocument("docno", docno)).tolist()
         else:
             # Use the provided docids
-            docids = inp.docid
+            docids = inp.docid.tolist()
 
         # Look up the metadata and build a new frame to append
-        docids = docids.values.tolist() # getItems expects a list
         metadata_matrix = self.metaindex.getItems(self.fields, docids) # indexed by docid then keys
         metadata_frame = pd.DataFrame(metadata_matrix, columns=self.fields)
 
