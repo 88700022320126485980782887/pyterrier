@@ -116,7 +116,7 @@ class Transformer:
         """
         return self.transform(pd.DataFrame(list(input)))
 
-    def transform_gen(self, input : pd.DataFrame, batch_size=1, output_topics=False) -> Iterator[pd.DataFrame]:
+    def transform_gen(self, input : pd.DataFrame, batch_size : int = 1, output_topics :bool = False) -> Iterator[pd.DataFrame]:
         """
             Helper method for invoking a transformer on smaller batches of queries.
             The input dataframe is grouped into batches of batch_size queries, and a generator
@@ -153,7 +153,7 @@ class Transformer:
             else:
                 yield res
 
-    def search(self, query : str, qid : str = "1", sort=True) -> pd.DataFrame:
+    def search(self, query : str, qid : str = "1", sort : bool = True) -> pd.DataFrame:
         """
             Method for executing a transformer (pipeline) for a single query. 
             Returns a dataframe with the results for the specified query. This
