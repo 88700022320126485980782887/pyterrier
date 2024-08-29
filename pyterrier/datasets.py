@@ -4,7 +4,7 @@ import json
 import pandas as pd
 from .transformer import is_lambda
 import types
-from typing import Union, Tuple, Iterator, Dict, Any, List, Literal
+from typing import Union, Tuple, Iterator, Dict, Any, List, Literal, Iterable
 from warnings import warn
 import requests
 from .io import autoopen, touch
@@ -48,7 +48,7 @@ class Dataset():
     def _configure(self, **kwargs):
         pass
 
-    def get_corpus(self):
+    def get_corpus(self) -> Iterable[str]:
         """ 
             Returns the location of the files to allow indexing the corpus, i.e. it returns a list of filenames.
         """
@@ -66,7 +66,7 @@ class Dataset():
         """
         return None
 
-    def get_index(self, variant=None, **kwargs):
+    def get_index(self, variant=None, **kwargs) -> Any:
         """ 
             Returns the IndexRef of the index to allow retrieval. Only a few datasets provide indices ready made.
         """
@@ -99,7 +99,7 @@ class Dataset():
             self.get_qrels(variant=variant)
         )
 
-    def info_url(self):
+    def info_url(self) -> Union[str,None]:
         """
             Returns a url that provides more information about this dataset.
         """
