@@ -3,7 +3,7 @@ from matchpy import Wildcard, Symbol, Operation, Arity
 from warnings import warn
 import pandas as pd
 from deprecated import deprecated
-from typing import Iterable, Iterator, Union
+from typing import Iterable, Iterator, Union, Any
 from . import __version__
 
 LAMBDA = lambda:0
@@ -87,6 +87,9 @@ class Transformer:
 
         If `uniform` is True, input will be returned in its entirety each time.
         If `uniform` is False, rows from input that match the qid values from the argument dataframe.
+
+        Arguments:
+                input(DataFrame): a dataframe to store and return, based on setting of `uniform`.
         
         """
         if uniform:
@@ -98,6 +101,9 @@ class Transformer:
             Abstract method for all transformations. Takes as input a Pandas
             DataFrame, and also returns one. Most pt.Transformer implementations 
             must implement this method.
+
+            Arguments:
+                topics_or_res(DataFrame): a dataframe to process
         """
         pass
 
@@ -198,10 +204,14 @@ class Transformer:
         return PoolParallelTransformer(self, N, backend)
 
     # Get and set specific parameter value by parameter's name
-    def get_parameter(self, name : str):
+    def get_parameter(self, name : str) -> Any:
         """
             Gets the current value of a particular key of the transformer's configuration state.
             By default, this examines the attributes of the transformer object, using ``hasattr()`` and ``setattr()``.
+
+            Arguments:
+                name: name of parameter
+            
         """
         if hasattr(self, name):
             return getattr(self, name)
@@ -209,10 +219,14 @@ class Transformer:
             raise ValueError(("Invalid parameter name %s for transformer %s. " + 
                       "Check the list of available parameters") %(str(name), str(self)))
 
-    def set_parameter(self, name : str, value):
+    def set_parameter(self, name : str, value : Any):
         """
             Adjusts this transformer's configuration state, by setting the value for specific parameter.
             By default, this examines the attributes of the transformer object, using ``hasattr()`` and ``setattr()``.
+
+            Arguments:
+                name: name of parameter
+                value: current value of parameter
         """
         if hasattr(self, name):
             setattr(self, name, value)
@@ -224,6 +238,9 @@ class Transformer:
         """
             This implements a default method for every transformer, which is aliased to ``transform()`` (for DataFrames)
             or ``transform_iter()`` (for iterable dictionaries), depending on the type of input.
+
+            Arguments:
+                input: a dataframe or an iterable dictionary, to process.
 
             Example::
 
@@ -298,6 +315,9 @@ class Indexer(Transformer):
             an instance of the index or retriever. This method is typically used to implement indexers that
             consume a corpus (or to consume the output of previous pipeline components that have
             transformer the documents being consumed).
+
+            Arguments:
+                iter: input to process. Typically this has the form `[ {'docno' : 'd1', 'text': '...'}, ...]`.
         """
         pass
 
@@ -310,7 +330,7 @@ class Estimator(Transformer):
     """
         This is a base class for things that can be fitted.
     """
-    def fit(self, topics_or_res_tr, qrels_tr, topics_or_res_va, qrels_va):
+    def fit(self, topics_or_res_tr : pd.DataFrame, qrels_tr : pd.DataFrame, topics_or_res_va : pd.DataFrame, qrels_va : pd.DataFrame):
         """
             Method for training the transformer.
 
@@ -336,7 +356,7 @@ class IdentityTransformer(Transformer, Operation):
     def __init__(self, *args, **kwargs):
         super(IdentityTransformer, self).__init__(*args, **kwargs)
     
-    def transform(self, topics):
+    def transform(self, topics : pd.DataFrame) ->  pd.DataFrame:
         return topics
 
 class SourceTransformer(Transformer, Operation):

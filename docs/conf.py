@@ -136,6 +136,10 @@ autodoc_default_options = {
     'member-order':    'bysource',
 }
 
+autodoc_typehints = "description"
+typehints_use_signature = False
+typehints_use_signature_return = False
+
 # -- Options for HTMLHelp output ---------------------------------------------
 
 # Output file base name for HTML help builder.
