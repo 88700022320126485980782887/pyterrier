@@ -9,7 +9,7 @@ from pyterrier.model import coerce_queries_dataframe, FIRST_RANK
 import concurrent
 from concurrent.futures import ThreadPoolExecutor
 import pyterrier as pt
-from typing import Dict
+from typing import Dict, Optional, Callable, List, Literal, Any
 
 _matchops = ["#combine", "#uw", "#1", "#tag", "#prefix", "#band", "#base64", "#syn"]
 def _matchop(query):
@@ -124,8 +124,8 @@ class Retriever(RetrieverBase):
 
     @staticmethod
     def from_dataset(dataset : Union[str,Dataset], 
-            variant : str = None, 
-            version='latest',            
+            variant : Optional[str] = None, 
+            version : str = 'latest',            
             **kwargs):
         """
         Instantiates a Retriever object from a pre-built index access via a dataset.
@@ -171,7 +171,14 @@ class Retriever(RetrieverBase):
         "termpipelines": "Stopwords,PorterStemmer"
     }
 
-    def __init__(self, index_location, controls=None, properties=None, metadata=["docno"],  num_results=None, wmodel=None, threads=1, **kwargs):
+    def __init__(self, index_location, 
+                 controls : Optional[Dict[str,str]] = None, 
+                 properties : Optional[Dict[str,str]]= None, 
+                 metadata : List[str] = ["docno"], 
+                 num_results : Optional[int] = None, 
+                 wmodel : Optional[Union[str,Callable]] = None, 
+                 threads : int = 1, 
+                 **kwargs):
         """
             Init method
 
@@ -276,7 +283,9 @@ class Retriever(RetrieverBase):
         for key,value in d["properties"].items():
             pt.terrier.J.ApplicationSetup.setProperty(key, str(value))
 
-    def _retrieve_one(self, row, input_results=None, docno_provided=False, docid_provided=False, scores_provided=False):
+    def _retrieve_one(self, row, 
+                      input_results : Optional[pd.DataFrame] = None, 
+                      docno_provided : bool = False, docid_provided : bool = False, scores_provided : bool = False) -> List[List[Any]]:
         rank = FIRST_RANK
         qid = str(row.qid)
 
@@ -468,7 +477,13 @@ class TextIndexProcessor(pt.Transformer):
         for instance query expansion based on text.
     '''
 
-    def __init__(self, innerclass, takes="queries", returns="docs", body_attr="body", background_index=None, verbose=False, **kwargs):
+    def __init__(self, innerclass, 
+                 takes : Literal["queries", "docs"] = "queries", 
+                 returns : Literal["queries", "docs"] = "docs", 
+                 body_attr = "body", 
+                 background_index = None, 
+                 verbose = False, 
+                 **kwargs):
         #super().__init__(**kwargs)
         self.innerclass = innerclass
         self.takes = takes
@@ -657,8 +672,8 @@ class FeaturesRetriever(Retriever):
 
     @staticmethod 
     def from_dataset(dataset : Union[str,Dataset], 
-            variant : str = None, 
-            version='latest',            
+            variant : Optional[str] = None, 
+            version : str = 'latest',            
             **kwargs):
         return pt.datasets.transformer_from_dataset(dataset, variant=variant, version=version, clz=FeaturesRetriever, **kwargs)
 

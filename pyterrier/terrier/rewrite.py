@@ -44,10 +44,10 @@ def tokenise(tokeniser : Union[str,TerrierTokeniser,FunctionType] = 'english', m
         _query_fn = tokeniser
     else:
         tokeniser = TerrierTokeniser._to_obj(tokeniser)
-        tokeniser = TerrierTokeniser._to_class(tokeniser)
-        if "." not in tokeniser:
-            tokeniser = 'org.terrier.indexing.tokenisation.' + tokeniser
-        tokenobj = pt.java.autoclass(tokeniser)()
+        tokeniser_cls = TerrierTokeniser._to_class(tokeniser)
+        if "." not in tokeniser_cls:
+            tokeniser_cls = 'org.terrier.indexing.tokenisation.' + tokeniser_cls
+        tokenobj = pt.java.autoclass(tokeniser_cls)()
         _query_fn = tokenobj.getTokens
 
     def _join_str(input : Union[str,List[str]]):
@@ -444,8 +444,8 @@ class _StashResults(pt.Transformer):
             raise ValueError("Cannot apply pt.rewrite.stash_results() more than once")
         doc_cols = pt.model.document_columns(topics_and_res)
         
-        rtr =  []
         if self.clear:
+            rtr = []
             query_cols = pt.model.query_columns(topics_and_res)            
             for qid, groupDf in topics_and_res.groupby("qid"):
                 documentsDF = groupDf[doc_cols]
@@ -455,6 +455,7 @@ class _StashResults(pt.Transformer):
                 rtr.append(queryDict)
             return pd.DataFrame(rtr)
         else:
+            rtr = []
             for qid, groupDf in topics_and_res.groupby("qid"):
                 groupDf = groupDf.reset_index().copy()
                 documentsDF = groupDf[doc_cols]

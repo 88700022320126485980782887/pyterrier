@@ -1,5 +1,5 @@
 from enum import Enum
-
+from typing import Union
 
 class TerrierTokeniser(Enum):
     """
@@ -20,7 +20,7 @@ class TerrierTokeniser(Enum):
             return this
 
     @staticmethod
-    def _to_class(this):
+    def _to_class(this : Union['TerrierTokeniser', str]) -> str:
         if this == TerrierTokeniser.whitespace:
             return 'WhitespaceTokeniser'
         if this == TerrierTokeniser.english:
