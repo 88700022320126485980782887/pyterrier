@@ -20,6 +20,7 @@ class TerrierTextLoader(pt.Transformer):
             fields: The fields to load from the index. If '*', all fields will be loaded.
             verbose: Whether to print debug information.
         """
+        index = pt.terrier.Index.of(index)
         metaindex = index.getMetaIndex()
 
         if metaindex is None:
@@ -85,6 +86,4 @@ def terrier_text_loader(
         fields: The fields to load from the index. If '*', all fields will be loaded.
         verbose: Whether to print debug information.
     """
-    if isinstance(index, (str, pt.terrier.J.IndexRef)):
-        index = pt.IndexFactory.of(index)
     return TerrierTextLoader(index, fields, verbose=verbose)
