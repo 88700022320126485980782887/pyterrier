@@ -23,6 +23,7 @@ public class CallableWeightingModel extends WeightingModel {
 
     public Callback scoringClass;
 
+    @SuppressWarnings("unused") //we want the constructor to exist but be private
     private CallableWeightingModel() {}
 
     public CallableWeightingModel(Callback _scoringClass) {
@@ -46,5 +47,6 @@ public class CallableWeightingModel extends WeightingModel {
 
     private void writeObject(ObjectOutputStream out) throws IOException {}
     private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {}
+    @SuppressWarnings("unused") // 
     private void readObjectNoData() throws ObjectStreamException {}
 }
