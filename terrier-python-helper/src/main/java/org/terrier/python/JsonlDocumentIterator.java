@@ -4,11 +4,9 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Scanner;
 import java.io.File;
-import java.io.IOException;
 import java.io.FileNotFoundException;
 import java.lang.IllegalStateException;
 import org.terrier.indexing.FlatJSONDocument;
-import com.fasterxml.jackson.core.JsonProcessingException;
 
 /** This class allows reading FlatJSONDocument objects, line by line from a file */
 public class JsonlDocumentIterator implements Iterator<FlatJSONDocument> {
