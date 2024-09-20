@@ -6,7 +6,6 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Scanner;
 import java.io.File;
-import java.io.IOException;
 import java.io.FileNotFoundException;
 import java.lang.IllegalStateException;
 import org.terrier.structures.indexing.DocumentPostingList;
@@ -54,11 +53,9 @@ public class JsonlPretokenisedIterator implements Iterator<Map.Entry<Map<String,
             return new org.terrier.structures.collections.MapEntry<Map<String,String>,DocumentPostingList>(properties, pl);
 
         } catch (IllegalStateException ex) {
-            throw new NoSuchElementException("Illegal state");
+            throw new NoSuchElementException("Illegal state", ex);
         } catch (JsonProcessingException ex) {
-            throw new NoSuchElementException("Invalid JSON");
-        } catch (IOException ex) {
-            throw new NoSuchElementException("IO Error");
+            throw new NoSuchElementException("Invalid JSON", ex);
         }
     }
 }

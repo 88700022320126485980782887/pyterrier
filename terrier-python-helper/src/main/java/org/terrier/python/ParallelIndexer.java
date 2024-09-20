@@ -14,7 +14,6 @@ import java.io.IOException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.terrier.indexing.Collection;
-import org.terrier.structures.Index;
 import org.terrier.structures.IndexOnDisk;
 import org.terrier.structures.IndexUtil;
 import org.terrier.structures.indexing.Indexer;
@@ -29,11 +28,11 @@ public class ParallelIndexer {
 
     public static void buildParallelTokenised(
             final Iterator<Map.Entry<Map<String,String>, DocumentPostingList>>[] docSources, 
-            String output, Class indexerClass, Class mergerClass) 
+            String output, Class<? extends org.terrier.structures.indexing.Indexer> indexerClass, Class<? extends org.terrier.structures.merging.StructureMerger> mergerClass) 
         {
         final String outputPath = output;
-        final Constructor indexerConst;
-        final Constructor mergerConst;
+        final Constructor<? extends org.terrier.structures.indexing.Indexer> indexerConst;
+        final Constructor<? extends org.terrier.structures.merging.StructureMerger> mergerConst;
         try {
             indexerConst = indexerClass.getConstructor(new Class[]{String.class, String.class}); // path, prefix
             mergerConst = mergerClass.getConstructor(new Class[]{IndexOnDisk.class, IndexOnDisk.class, IndexOnDisk.class}); // a, b, out
@@ -41,7 +40,6 @@ public class ParallelIndexer {
             throw new RuntimeException(ex); // Thrown if mergerClass is not for an StructureMerger class
         }
 
-        final long starttime = System.currentTimeMillis();
         final AtomicInteger indexCounter = new AtomicInteger();
         final AtomicInteger mergeCounter = new AtomicInteger();         
         
@@ -97,11 +95,11 @@ public class ParallelIndexer {
         }
     }
 
-    public static void buildParallel(Collection[] sourceCollections, String output, Class indexerClass, Class mergerClass) {
+    public static void buildParallel(Collection[] sourceCollections, String output, Class<? extends org.terrier.structures.indexing.Indexer> indexerClass, Class<? extends org.terrier.structures.merging.StructureMerger> mergerClass) {
         final Collection[] collections = sourceCollections;
         final String outputPath = output;
-        final Constructor indexerConst;
-        final Constructor mergerConst;
+        final Constructor<? extends org.terrier.structures.indexing.Indexer> indexerConst;
+        final Constructor<? extends org.terrier.structures.merging.StructureMerger> mergerConst;
         try {
             indexerConst = indexerClass.getConstructor(new Class[]{String.class, String.class}); // path, prefix
             mergerConst = mergerClass.getConstructor(new Class[]{IndexOnDisk.class, IndexOnDisk.class, IndexOnDisk.class}); // a, b, out
@@ -109,7 +107,6 @@ public class ParallelIndexer {
             throw new RuntimeException(ex); // Thrown if mergerClass is not for an StructureMerger class
         }
 
-        final long starttime = System.currentTimeMillis();
         final AtomicInteger indexCounter = new AtomicInteger();
         final AtomicInteger mergeCounter = new AtomicInteger();         
         
@@ -161,7 +158,7 @@ public class ParallelIndexer {
     }
 
     final static BinaryOperator<String> getMerger(
-        final Constructor mergerConst,
+        final Constructor<? extends org.terrier.structures.merging.StructureMerger> mergerConst,
         final String outputPath, 
         final AtomicInteger mergeCounter) {
         return new BinaryOperator<String>()
@@ -174,7 +171,7 @@ public class ParallelIndexer {
                     return u;
                 if (u == null)
                     return t;
-                Index.setIndexLoadingProfileAsRetrieval(false);
+                IndexOnDisk.setIndexLoadingProfileAsRetrieval(false);
                 IndexOnDisk src1 = IndexOnDisk.createIndex(outputPath, t);
                 IndexOnDisk src2 = IndexOnDisk.createIndex(outputPath, u);
                 if (src1 == null && src2 == null)
